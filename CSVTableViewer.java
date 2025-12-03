@@ -8,6 +8,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -50,6 +51,7 @@ public class CSVTableViewer extends JFrame {
         //setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setEscapeKeyBinding();
+        setSearchKeyBinding();
 
         
 
@@ -71,6 +73,17 @@ public class CSVTableViewer extends JFrame {
         table = new JTable(tableModel);
         sorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(sorter);
+        
+        // stop jtable from reacting to tab
+        table.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_TAB) {
+                    e.consume(); // Prevent default behavior
+                    table.transferFocus(); // Move focus to next component
+                }
+            }
+        });
 
         // Set column comparators for numeric columns
         for (int i = 0; i < columnTypes.length; i++) {
@@ -147,6 +160,7 @@ public class CSVTableViewer extends JFrame {
 		filterModeButton.setToolTipText("Quick filtering mode");
         filterModeButton.addActionListener(e -> toggleFilterMode(searchField, filterModeButton));
 		filterModeButton.setContentAreaFilled(false);
+        filterModeButton.setFocusable(false);
 		
 
         // Layout
@@ -164,6 +178,7 @@ public class CSVTableViewer extends JFrame {
 		// final JButton selectionModeButton = new JButton("Row Selection");
 		final JButton selectionModeButton = new JButton("\u2582");
 		selectionModeButton.setToolTipText("Row selection mode");
+        selectionModeButton.setFocusable(false);
 		searchPanel.add(selectionModeButton);
 		
 		// Make button less eye-catching
@@ -224,6 +239,8 @@ public class CSVTableViewer extends JFrame {
 		
 		pack();
         setLocationRelativeTo(null);
+
+        table.requestFocus();
     }
 
     private void setEscapeKeyBinding() {
@@ -236,6 +253,20 @@ public class CSVTableViewer extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
+            }
+        });
+    }
+    private void setSearchKeyBinding() {
+        // Ctrl+F
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK);
+    
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(key, "focusSearch");
+        
+        getRootPane().getActionMap().put("focusSearch", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                searchField.requestFocus();
             }
         });
     }
