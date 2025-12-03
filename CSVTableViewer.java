@@ -33,7 +33,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 /*
-Get-Process | select id,ProcessName -f 100 | ConvertTo-Csv -delim "`t" -UseQuotes Never | java '-Dsun.java2d.uiScale=4' .\CSVTableViewer.java --in - --delimiter "`t" --column-types numeric,string --pass-thru
+Get-Process | select id,ProcessName -f 100 | ConvertTo-Csv -delim "`t" -UseQuotes Never | java '-Dsun.java2d.uiScale=4' .\CSVTableViewer.java --in - --delimiter "`t" --column-types number,string --pass-thru
 
 java '-Dsun.java2d.uiScale=2.5' $javaSwingTableViewer .\pplDepicted.tsv "`t" url
 */
@@ -87,7 +87,7 @@ public class CSVTableViewer extends JFrame {
 
         // Set column comparators for numeric columns
         for (int i = 0; i < columnTypes.length; i++) {
-            if (columnTypes[i].equalsIgnoreCase("double")) {
+            if (columnTypes[i].equalsIgnoreCase("number")) {
                 sorter.setComparator(i, Comparator.comparingDouble(o -> {
 					String val = o.toString();
 					try {
@@ -370,22 +370,16 @@ public class CSVTableViewer extends JFrame {
 
     public static void main(String[] args) throws IOException {
 		var params = parseArgs(args);
-        String delimiter = ",";
-        String rowDelimiter = "\r?\n";
+        String delimiter = params.containsKey("delimiter") ? params.get("delimiter") : ",";
+        String rowDelimiter = params.containsKey("row-delimiter") ? params.get("row-delimiter") : "\r?\n";
+        
         String[] columnTypes;
-		String dataStr = readString(params.get("in"));
+		String dataStr = params.containsKey("in") ? readString(params.get("in")) : String.join("\n",
+            "clmn,also column","somebody,1","once,9","told me,20");
 		
-		//if (args.length >= 2) {
-        //    delimiter = args[0];
-        //} else {
-		//	delimiter = ",";
-		//}
-		//if (params.containsKey("in")) {
-		//}
-		if (params.containsKey("delimiter")) {
-			delimiter = params.get("delimiter");
-		}
-		if (params.containsKey("column-types")) {
+        // if (!params.containsKey("in")) columnTypes = new String[]{"string","number"};
+		if (!params.containsKey("in")) columnTypes = new String[]{"string","number"};
+        else if (params.containsKey("column-types")) {
 			columnTypes = params.get("column-types").split(",");
 		} 
 		else columnTypes = new String[0];
@@ -398,16 +392,6 @@ public class CSVTableViewer extends JFrame {
 		rows = null; dataStr = null;
 		
 		final boolean passThruMode = params.containsKey("pass-thru");
-		// if () {
-			// passThruMode = true;
-		// }
-
-        
-        //if (args.length >= 3) {
-        //    columnTypes = args[1].split(",");
-        //} else {
-		//	columnTypes = new String[0];
-		//}
 
         SwingUtilities.invokeLater(() -> {
             CSVTableViewer viewer = new CSVTableViewer(data, columnTypes, passThruMode);
