@@ -8,6 +8,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
@@ -47,6 +49,9 @@ public class CSVTableViewer extends JFrame {
         setTitle("CSV/TSV Viewer");
         //setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setEscapeKeyBinding();
+
+        
 
         
 
@@ -201,16 +206,11 @@ public class CSVTableViewer extends JFrame {
             JPanel buttonPanel = new JPanel();
             JButton okButton = new JButton("OK");
             JButton cancelButton = new JButton("Cancel");
-
-            okButton.addActionListener(e -> {
-                int[] selectedRows = table.getSelectedRows();
-                for (int row : selectedRows) {
-                    System.out.println(table.convertRowIndexToModel(row)); // Print model indices
-                }
-                System.exit(0);
-            });
+            okButton.addActionListener(e -> printSelectedIndicesAndExit());
 
             cancelButton.addActionListener(e -> System.exit(0));
+            
+            setEnterSubmitKeyBinding();
 
             buttonPanel.add(okButton);
             buttonPanel.add(cancelButton);
@@ -224,6 +224,51 @@ public class CSVTableViewer extends JFrame {
 		
 		pack();
         setLocationRelativeTo(null);
+    }
+
+    private void setEscapeKeyBinding() {
+        KeyStroke escapeKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+    
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(escapeKey, "exitApplication");
+        
+        getRootPane().getActionMap().put("exitApplication", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+    }
+    private void setEnterSubmitKeyBinding() {
+        KeyStroke key = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+    
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            .put(key, "submitAndExit");
+
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "submitAndExit");
+        table.getActionMap().put("submitAndExit", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                printSelectedIndicesAndExit();
+            }
+        });
+        
+        getRootPane().getActionMap().put("submitAndExit", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println(e);
+                printSelectedIndicesAndExit();
+            }
+        });
+    }
+
+    private void printSelectedIndicesAndExit() {
+        int[] selectedRows = table.getSelectedRows();
+        for (int row : selectedRows) {
+            System.out.println(table.convertRowIndexToModel(row)); // Print model indices
+        }
+        System.exit(0);
     }
 
     private void updateRowCount() {
