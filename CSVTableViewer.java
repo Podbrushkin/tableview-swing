@@ -2,6 +2,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
@@ -33,8 +34,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 /*
+java CSVTableViewer.java
 Get-Process | select id,ProcessName -f 100 | ConvertTo-Csv -delim "`t" -UseQuotes Never | java '-Dsun.java2d.uiScale=4' .\CSVTableViewer.java --in - --delimiter "`t" --column-types number,string --pass-thru
-
+Get-Process | select @{n='url';e={'https://duckduckgo.com/?q='+[System.Net.WebUtility]::UrlEncode($_.ProcessName)}},id,ProcessName | ConvertTo-Csv -delim "`t" -UseQuotes Never | java '-Dsun.java2d.uiScale=4' ./CSVTableViewer.java --in - --delimiter "`t" --column-types url,number,string --pass-thru
 java '-Dsun.java2d.uiScale=2.5' $javaSwingTableViewer .\pplDepicted.tsv "`t" url
 */
 public class CSVTableViewer extends JFrame {
@@ -393,8 +395,11 @@ public class CSVTableViewer extends JFrame {
 		
 		final boolean passThruMode = params.containsKey("pass-thru");
 
+        
+        if (params.containsKey("look-and-feel")) setLookAndFeel(params.get("look-and-feel"));
         SwingUtilities.invokeLater(() -> {
             CSVTableViewer viewer = new CSVTableViewer(data, columnTypes, passThruMode);
+            if (params.containsKey("dark-mode")) viewer.applySimpleDarkMode();
             viewer.setVisible(true);
         });
     }
@@ -427,6 +432,69 @@ public class CSVTableViewer extends JFrame {
             else System.err.println("What is this arg? "+args[i]);
         }
         return result;
+    }
+
+    private void applySimpleDarkMode() {
+        // Set frame background
+        getContentPane().setBackground(Color.DARK_GRAY);
+
+        UIManager.put("Panel.background", Color.DARK_GRAY);
+        UIManager.put("Button.background", new Color(80, 80, 80));
+        UIManager.put("Button.foreground", Color.WHITE);
+        UIManager.put("Label.foreground", Color.WHITE);
+        UIManager.put("Viewport.background", Color.DARK_GRAY);
+        UIManager.put("TextField.background", Color.DARK_GRAY);
+        UIManager.put("TextField.foreground", Color.WHITE);
+        // UIManager.put("ScrollBar.background", Color.RED); // bad
+        UIManager.put("ScrollBar.thumb", Color.DARK_GRAY);
+        // UIManager.put("Table.alternateRowColor", Color.RED);
+        // UIManager.put("Table.rowColor", Color.RED); // not compat with bg color
+        UIManager.put("Table.background", Color.DARK_GRAY);
+        UIManager.put("Table.foreground", Color.WHITE);
+
+
+        SwingUtilities.updateComponentTreeUI(this);
+        
+        if (table != null) {
+            // table.setRowHeight(64);
+            // table.setBackground(new Color(60, 63, 65));
+            // table.setForeground(Color.WHITE);
+            // table.setGridColor(Color.GRAY);
+            // table.setSelectionBackground(new Color(0, 100, 200));
+            // table.setSelectionForeground(Color.WHITE);
+            
+            
+            // Header
+            JTableHeader header = table.getTableHeader();
+            header.setBackground(new Color(43, 43, 43));
+            header.setForeground(Color.WHITE);
+        }
+
+        
+    }
+
+    private static void setLookAndFeel(String name) {
+        UIManager.LookAndFeelInfo[] lafs = UIManager.getInstalledLookAndFeels();
+        
+        boolean set = false;
+        for (UIManager.LookAndFeelInfo laf : lafs) {
+            try {
+                if (laf.getName().equalsIgnoreCase(name)) {
+                    UIManager.setLookAndFeel(laf.getClassName());
+                    set = true;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (!set) {
+            for (UIManager.LookAndFeelInfo laf : lafs) {
+                System.out.println("Name: " + laf.getName());
+                System.out.println("Class: " + laf.getClassName());
+                if (UIManager.getLookAndFeel().getName().equals(laf.getName())) System.out.println("Current");
+                System.out.println("---");
+            }
+        }
     }
 	
 }
