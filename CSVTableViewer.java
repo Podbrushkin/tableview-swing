@@ -372,6 +372,7 @@ public class CSVTableViewer extends JFrame {
 
     public static void main(String[] args) throws IOException {
 		var params = parseArgs(args);
+        if (params.containsKey("help")) { printHelp(); System.exit(0);}
         String delimiter = params.containsKey("delimiter") ? params.get("delimiter") : ",";
         String rowDelimiter = params.containsKey("row-delimiter") ? params.get("row-delimiter") : "\r?\n";
         
@@ -495,6 +496,21 @@ public class CSVTableViewer extends JFrame {
                 System.out.println("---");
             }
         }
+    }
+
+    private static void printHelp() {
+        System.out.println(String.join(System.lineSeparator(),
+            "Display GUI table with given data.",
+            "",
+            "--in <path>                # Path to file or '-' to read from stdin.",
+            "--delimiter <regex>        # Cell delimiter, default: ','.",
+            "--row-delimiter <regex>    # Row delimiter, default: '\\r?\\n' (EOL).",
+            "--column-types <arr>       # Types of columns, e.g.: 'string,number,url'. Default: all string.",
+            "--dark-mode                # Use dark mode.",
+            "--look-and-feel <name>     # Use this Swing look and feel, run with any value to print all available.",
+            "--pass-thru                # Show Ok button, when pressed - prints sequence numbers of selected rows and exits.",
+            "--help                     # Print this message and exit."
+        ));
     }
 	
 }

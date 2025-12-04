@@ -72,9 +72,9 @@ function Out-GridViewJava {
 		# To start source: java '-Dsun.java2d.uiScale=4' ./CSVTableViewer.java --dark-mode
 
 		#Write-Host $dataStr
-		#$JAVA_TABLE_VIEWER = "$PSScriptRoot/CSVTableViewer.java" # This one for plain source
+		$JAVA_TABLE_VIEWER = "$PSScriptRoot/CSVTableViewer.java" # This one for plain source
 		#$JAVA_TABLE_VIEWER = "CSVTableViewer"
-		$JAVA_TABLE_VIEWER = "$PSScriptRoot/tableview-swing.jar" # This one for jar
+		#$JAVA_TABLE_VIEWER = "$PSScriptRoot/tableview-swing.jar" # This one for jar
 		#$JAVA_PATH = 'java'
 		$JAVA_PATH = "java" # You can put here full path to /bin/java executable
 		#write-host $PSScriptRoot
@@ -87,8 +87,8 @@ function Out-GridViewJava {
 		$args += "--dark-mode"
 		$argsStr = $args | ForEach-Object {"""$_"""} | Join-String -sep " "
 
-		#$javaArgs = "$JAVA_TABLE_VIEWER $argsStr" 		# This one for plain source
-		$javaArgs = "-jar $JAVA_TABLE_VIEWER $argsStr" 	# This one for jar
+		$javaArgs = "$JAVA_TABLE_VIEWER $argsStr" 		# This one for plain source
+		#$javaArgs = "-jar $JAVA_TABLE_VIEWER $argsStr" 	# This one for jar
 
 		# This one makes app 4x bigger
 		$javaArgs = '-Dsun.java2d.uiScale=4 '+$javaArgs
