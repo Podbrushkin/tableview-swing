@@ -25,6 +25,7 @@ function Out-GridViewJava {
 		  $isScript = $de.ValueType -eq 'ScriptBlock'
 		  $expr = $isScript ? [scriptblock]::Create($de.Value) : $de.Value
 
+		  # Remove ANSI color chars like in gci
 		  if ($expr -eq 'NameString') {
 			$expr = { ($_.NameString -replace '\u001b\[[0-9;]*m','') }
 		  }
@@ -44,28 +45,39 @@ function Out-GridViewJava {
 		  $selectionMap = $firstItem.psobject.Properties.name
 		}
 
-		$global:selectionMap = $selectionMap
-		$global:items = $items
-		$types = $selectionMap | ForEach-Object {
-		   #write-host $items[0].$expr.GetType().Name
-			$expr = $_.Expression ?? $_
-			if (($expr -is [scriptblock]) -and ($expr.toString() -match 'float|long|int')) {'number'}
-			elseif (($expr -is [string]) -and ($items[0].$expr -match 'https?://')) {'url'}
-			elseif ($items[0].$expr.GetType().Name -match 'byte|short|int32|int64|long|sbyte|ushort|uint32|ulong|float|double|decimal'
-			) {'number'}
-			else {'string'}
-		}
+		#$global:selectionMap = $selectionMap
+		#$global:items = $items
 
-		#$dataStr = $items | Select-Object $selectionMap | ConvertTo-Csv -Delimiter "`t" -usequotes Never | Join-String -separator "`n"
 		$rs = [char]30; $us = [char]31;
-		$dataStr = $items | Select-Object $selectionMap | ForEach-Object {
-			$_.psobject.properties.Value | Join-String -Separator "$us"
+		$headersStr = $selectionMap | ForEach-Object { $_.name ?? $_ } | Join-String -Separator "$us"
+		$types = New-Object 'object[]' $selectionMap.Count
+		$dataStr = $items | Select-Object $selectionMap | ForEach-Object {"$headersStr"}{
+			$_.psobject.properties.Value | ForEach-Object {$i=0}{
+				if (($null -ne $_) -and ($null -eq $types[$i])) {
+					$typeName = $_.getType().Name
+					if ($typeName -match 'byte|short|int32|int64|long|sbyte|ushort|uint32|ulong|float|double|decimal') {$types[$i] = 'number'}
+					elseif ($_ -match '^https?://') {$types[$i] = 'url'}
+				}
+				$i++
+				$_
+			} | Join-String -Separator "$us"
 		} | Join-String -Separator "$rs"
+
+
+		# column without cells will be of type String
+		$types = $types | ForEach-Object { if ($null -eq $_) {"string"} else {$_} }
+		#Write-Host $types
+
+		# To start jar: java '-Dsun.java2d.uiScale=4' -jar ./tableview-swing.jar --dark-mode
+		# To start source: java '-Dsun.java2d.uiScale=4' ./CSVTableViewer.java --dark-mode
+
 		#Write-Host $dataStr
-		$JAVA_TABLE_VIEWER = "$PSScriptRoot/CSVTableViewer.java"
+		#$JAVA_TABLE_VIEWER = "$PSScriptRoot/CSVTableViewer.java" # This one for plain source
+		#$JAVA_TABLE_VIEWER = "CSVTableViewer"
+		$JAVA_TABLE_VIEWER = "$PSScriptRoot/tableview-swing.jar" # This one for jar
 		#$JAVA_PATH = 'java'
-		$JAVA_PATH = "java"
-		
+		$JAVA_PATH = "java" # You can put here full path to /bin/java executable
+		#write-host $PSScriptRoot
 		$args = @()
 		if ($PassThru) {$args += '--pass-thru'}
 		$args += '--in','-'
@@ -75,7 +87,8 @@ function Out-GridViewJava {
 		$args += "--dark-mode"
 		$argsStr = $args | ForEach-Object {"""$_"""} | Join-String -sep " "
 
-		$javaArgs = "$JAVA_TABLE_VIEWER $argsStr"
+		#$javaArgs = "$JAVA_TABLE_VIEWER $argsStr" 		# This one for plain source
+		$javaArgs = "-jar $JAVA_TABLE_VIEWER $argsStr" 	# This one for jar
 
 		# This one makes app 4x bigger
 		$javaArgs = '-Dsun.java2d.uiScale=4 '+$javaArgs
